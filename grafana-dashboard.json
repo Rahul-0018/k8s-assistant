@@ -1,0 +1,69 @@
+{
+  "dashboard": {
+    "title": "Groq Chatbot - Production Dashboard",
+    "tags": ["groq", "chatbot", "ai"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate (RPM)",
+        "type": "stat",
+        "targets": [{
+          "expr": "rate(http_requests_total{job="groq-chatbot"}[5m]) * 60",
+          "legendFormat": "Requests/min"
+        }],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [{
+          "expr": "rate(http_requests_total{job="groq-chatbot",status=~"5.."}[5m])",
+          "legendFormat": "5xx errors"
+        }],
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Average Response Latency",
+        "type": "graph",
+        "targets": [{
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="groq-chatbot"}[5m]))",
+          "legendFormat": "p95 latency"
+        }],
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Pod CPU Usage",
+        "type": "graph",
+        "targets": [{
+          "expr": "rate(container_cpu_usage_seconds_total{pod=~"groq-chatbot-.*"}[5m])",
+          "legendFormat": "{{pod}}"
+        }],
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "Pod Memory Usage",
+        "type": "graph",
+        "targets": [{
+          "expr": "container_memory_working_set_bytes{pod=~"groq-chatbot-.*"}",
+          "legendFormat": "{{pod}}"
+        }],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "HPA Replicas",
+        "type": "graph",
+        "targets": [{
+          "expr": "kube_deployment_status_replicas{deployment="groq-chatbot"}",
+          "legendFormat": "Replicas"
+        }],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      }
+    ]
+  }
+}

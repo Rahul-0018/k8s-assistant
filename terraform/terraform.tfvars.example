@@ -1,0 +1,17 @@
+# Oracle Cloud credentials - get these from OCI Console
+tenancy_ocid     = "ocid1.tenancy.oc1..xxxxx"
+user_ocid        = "ocid1.user.oc1..xxxxx"
+fingerprint      = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path = "~/.oci/oci_api_key.pem"
+region           = "us-ashburn-1"
+compartment_id   = "ocid1.compartment.oc1..xxxxx"
+
+# SSH keys
+ssh_public_key   = "~/.ssh/id_rsa.pub"
+ssh_private_key  = "~/.ssh/id_rsa"
+
+# Security
+allowed_ssh_cidr = "0.0.0.0/0"  # Change to your IP!
+
+# Groq API Key - get free at https://console.groq.com/keys
+groq_api_key     = "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

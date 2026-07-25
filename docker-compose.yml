@@ -1,0 +1,15 @@
+services:
+  chatbotai:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=llama-3.1-8b-instant
+      - SYSTEM_PROMPT=You are a specialized DevOps AI Assistant. Help users with Linux, Docker, Kubernetes, CI/CD, GitOps, Terraform, Ansible, Cloud (AWS, Azure, GCP), Networking, Monitoring, DevSecOps, and Infrastructure troubleshooting. Provide concise, accurate, and production-ready solutions. Politely decline non-DevOps-related questions.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped

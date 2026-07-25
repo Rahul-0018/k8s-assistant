@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: groq-chatbot
+  name: chatboti
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_USERNAME/groq-chatbot-k8s.git
+    repoURL: https://github.com/Rahul-0018/k8s-assistant.git
     targetRevision: HEAD
     path: k8s
     directory:
@@ -16,7 +16,7 @@ spec:
       jsonnet: {}
   destination:
     server: https://kubernetes.default.svc
-    namespace: groq-chatbot
+    namespace: chatbotai
   syncPolicy:
     automated:
       prune: true

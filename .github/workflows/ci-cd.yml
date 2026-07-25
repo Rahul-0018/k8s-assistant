@@ -118,116 +118,43 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-  deploy-staging:
-    name: 🚀 Deploy to Staging
-    runs-on: ubuntu-latest
+  deploy-gitops:
+    name: 🚀 GitOps Deployment
     needs: build-push
-    environment: staging
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.30.0'
-
-      - name: Configure kubeconfig
-        run: |
-          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
-
-      - name: Update image tag
-        run: |
-          sed -i "s|rahulloganathan/chatbotai:v4|${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
-      - name: Create Kubernetes Secret
-        run: |
-          export KUBECONFIG=kubeconfig
-      
-          kubectl create secret generic chatbotai-secrets \
-            --from-literal=GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
-            -n chatbotai \
-            --dry-run=client -o yaml | kubectl apply -f -
-      
-      - name: Deploy to staging
-        run: |
-          export KUBECONFIG=kubeconfig
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
-
-      - name: Verify deployment
-        run: |
-          export KUBECONFIG=kubeconfig
-          kubectl get pods -n chatbotai
-          kubectl get svc -n chatbotai
-
-  deploy-production:
-    name: 🏭 Deploy to Production
     runs-on: ubuntu-latest
-    needs: deploy-staging
-    environment: production
+  
+    permissions:
+      contents: write
+  
     if: github.ref == 'refs/heads/main'
+  
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
+      - uses: actions/checkout@v4
         with:
-          version: 'v1.30.0'
-
-      - name: Configure kubeconfig
+          persist-credentials: true
+  
+      - name: Update Deployment Image
         run: |
-          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
-
-      - name: Update image tag
+          sed -i "s|image: .*|image: ${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" \
+          k8s/deployment.yaml
+  
+      - name: Commit Changes
         run: |
-          sed -i "s|${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+  
+          git add k8s/deployment.yaml
+  
+          git commit -m "Deploy image ${{ github.sha }}" || exit 0
+  
+      - name: Push Changes
+        run: git push
 
-      - name: Create Kubernetes Secret
-        run: |
-          export KUBECONFIG=kubeconfig
-      
-          kubectl create secret generic chatbotai-secrets \
-            --from-literal=GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
-            -n chatbotai \
-            --dry-run=client -o yaml | kubectl apply -f -
-            
-      - name: Deploy to production
-        run: |
-          export KUBECONFIG=kubeconfig
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
-          kubectl apply -f k8s/networkpolicy.yaml
-          kubectl apply -f k8s/pdb.yaml
-          kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
-
-      - name: Verify deployment
-        run: |
-          export KUBECONFIG=kubeconfig
-          kubectl get pods -n chatbotai
-          kubectl get svc -n chatbotai
-          kubectl get ingress -n chatbotai
-
-      - name: Smoke test
-        run: |
-          export KUBECONFIG=kubeconfig
-          kubectl port-forward svc/chatbotai-service 8080:80 -n chatbotai &
-          sleep 5
-          curl -f http://localhost:8080/health || exit 1
-          curl -f http://localhost:8080/api/models || exit 1
-          pkill kubectl
-
-      - name: Notify deployment
+      - name: Notify
         if: always()
         run: |
-          echo "Deployment status: ${{ job.status }}"
-          echo "Image: ${{ vars.IMAGE_NAME }}:${{ github.sha }}"
+          echo "GitOps update completed"
+          echo "Status : ${{ job.status }}"
+          echo "Image  : ${{ vars.IMAGE_NAME }}:${{ github.sha }}"
+          echo "ArgoCD will detect the new commit and deploy it."
           

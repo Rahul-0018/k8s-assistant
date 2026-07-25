@@ -135,7 +135,7 @@ jobs:
   
       - name: Update Deployment Image
         run: |
-          sed -i "s|image: .*|image: ${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" \
+          sed -i "s|image: .*|image: ${{ vars.IMAGE_NAME }}:sha-${{ github.sha }}|g" \
           k8s/deployment.yaml
   
       - name: Commit Changes

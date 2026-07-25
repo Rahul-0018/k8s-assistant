@@ -4,7 +4,7 @@ metadata:
   name: chatbotai-metrics
   namespace: chatbotai
   labels:
-    release: prometheus
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:

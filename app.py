@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -16,6 +17,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Groq AI Chatbot", version="1.0.0")
+
+Instrumentator().instrument(app).expose(app)
 
 # CORS
 app.add_middleware(

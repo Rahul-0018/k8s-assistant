@@ -102,7 +102,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
+          images: ${{ vars.IMAGE_NAME }}
           tags: |
             type=sha,prefix=,suffix=,format=short
             type=raw,value=latest
@@ -139,8 +139,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          sed -i "s|${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
-
+          sed -i "s|rahulloganathan/chatbotai:v4|${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
       - name: Create Kubernetes Secret
         run: |
           export KUBECONFIG=kubeconfig
@@ -155,7 +154,7 @@ jobs:
           export KUBECONFIG=kubeconfig
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
 

@@ -30,7 +30,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: chatbotai
-        image: rahulloganathan/chatbotai:9549a6c0cae6827c7611f5c74e016e1e3ac34818
+        image: rahulloganathan/chatbotai:b4c095a4ddedc5b88dde90c78af9632b2b08a4ce
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

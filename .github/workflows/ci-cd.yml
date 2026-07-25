@@ -16,7 +16,7 @@ on:
 env:
   REGISTRY: docker.io
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-  IMAGE_NAME: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 
 jobs:
   test:
@@ -140,6 +140,15 @@ jobs:
       - name: Update image tag
         run: |
           sed -i "s|rahulloganathan/chatbotai:latest|${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
+
+      - name: Create Kubernetes Secret
+        run: |
+          export KUBECONFIG=kubeconfig
+      
+          kubectl create secret generic chatbotai-secrets \
+            --from-literal=GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
+            -n chatbotai \
+            --dry-run=client -o yaml | kubectl apply -f -
       
       - name: Deploy to staging
         run: |
@@ -148,14 +157,13 @@ jobs:
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/secret.yaml
           kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
           kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
 
       - name: Verify deployment
         run: |
           export KUBECONFIG=kubeconfig
-          kubectl get pods -n groq-chatbot
-          kubectl get svc -n groq-chatbot
+          kubectl get pods -n chatbotai
+          kubectl get svc -n chatbotai
 
   deploy-production:
     name: 🏭 Deploy to Production
@@ -181,12 +189,20 @@ jobs:
         run: |
           sed -i "s|rahulloganathan/chatbotai:latest|${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
 
+      - name: Create Kubernetes Secret
+        run: |
+          export KUBECONFIG=kubeconfig
+      
+          kubectl create secret generic chatbotai-secrets \
+            --from-literal=GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}" \
+            -n chatbotai \
+            --dry-run=client -o yaml | kubectl apply -f -
+            
       - name: Deploy to production
         run: |
           export KUBECONFIG=kubeconfig
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml

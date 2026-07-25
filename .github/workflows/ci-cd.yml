@@ -12,7 +12,7 @@ on:
 env:
   REGISTRY: docker.io
   DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
 
 jobs:
   test:
@@ -48,12 +48,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t ${{ vars.IMAGE_NAME }} .
+        run: docker build -t ${{ vars.IMAGE_NAME }}:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'app:${{ github.sha }}'
+          image-ref: "${{ vars.IMAGE_NAME }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -96,7 +96,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}
+          images: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
           tags: |
             type=sha,prefix=,suffix=,format=short
             type=raw,value=latest
@@ -133,7 +133,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          sed -i "s|rahulloganathan/chatbotai:latest|${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}}|g" k8s/deployment.yaml
+          sed -i "s|rahulloganathan/chatbotai:latest|${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
       
       - name: Deploy to staging
         run: |
@@ -143,7 +143,7 @@ jobs:
           kubectl apply -f k8s/secret.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl rollout status deployment/groq-chatbot -n groq-chatbot --timeout=300s
+          kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
 
       - name: Verify deployment
         run: |
@@ -173,7 +173,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          sed -i "s|ghcr.io/YOUR_USERNAME/groq-chatbot:latest|ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/deployment.yaml
+          sed -i "s|rahulloganathan/chatbotai:latest|${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
 
       - name: Deploy to production
         run: |
@@ -186,19 +186,19 @@ jobs:
           kubectl apply -f k8s/ingress.yaml
           kubectl apply -f k8s/networkpolicy.yaml
           kubectl apply -f k8s/pdb.yaml
-          kubectl rollout status deployment/groq-chatbot -n groq-chatbot --timeout=300s
+          kubectl rollout status deployment/chatbotai -n chatbotai --timeout=300s
 
       - name: Verify deployment
         run: |
           export KUBECONFIG=kubeconfig
-          kubectl get pods -n groq-chatbot
-          kubectl get svc -n groq-chatbot
-          kubectl get ingress -n groq-chatbot
+          kubectl get pods -n chatbotai
+          kubectl get svc -n chatbotai
+          kubectl get ingress -n chatbotai
 
       - name: Smoke test
         run: |
           export KUBECONFIG=kubeconfig
-          kubectl port-forward svc/groq-chatbot-service 8080:80 -n groq-chatbot &
+          kubectl port-forward svc/chatbotai-service 8080:80 -n chatbotai &
           sleep 5
           curl -f http://localhost:8080/health || exit 1
           curl -f http://localhost:8080/api/models || exit 1
@@ -208,4 +208,5 @@ jobs:
         if: always()
         run: |
           echo "Deployment status: ${{ job.status }}"
-          echo "Image: ghcr.io/${{ github.repository }}:${{ github.sha }}"
+          echo "Image: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}"
+          

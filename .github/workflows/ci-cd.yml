@@ -104,7 +104,7 @@ jobs:
         with:
           images: ${{ vars.IMAGE_NAME }}
           tags: |
-            type=sha
+            type=sha,format=long
             type=raw,value=latest
 
       - name: Build and push

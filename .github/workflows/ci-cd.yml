@@ -71,7 +71,7 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          extra_args: filesystem --only-verified .
+          extra_args: --only-verified .
 
   build-push:
     name: 📦 Build & Push Image

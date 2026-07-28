@@ -715,7 +715,7 @@ pre{
 </head>
 <body>
     <div class="header">
-        <h1>🚀 AI Chatbot</h1>
+        <h1>✨ AI Chatbot</h1>
         <div style="display:flex;gap:12px;align-items:center;">
             <button class="clear-btn" onclick="clearChat()">🗑️ Clear</button>
             <select class="model-select" id="modelSelect">

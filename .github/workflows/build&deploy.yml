@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build & Deploy to K3s
 on:
   push:
     branches: [ "main" ]
@@ -30,4 +30,14 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to K3s via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            sudo k3s kubectl apply -f k8s/deployment.yaml
+            sudo k3s kubectl rollout restart deployment/chatbot -n chatbot
           
